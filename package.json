@@ -1,0 +1,55 @@
+{
+  "name": "vscode-sts",
+  "displayName": "vscode-sts",
+  "description": "SmallTypeScript support for VSCode",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.40.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:sts"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "sts",
+        "extensions": [
+          ".sts"
+        ],
+        "aliases": [
+          "SmallTypeScript"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "typescriptServerPlugins": [
+      {
+        "name": "sts-language-service-plugin",
+        "enableForWorkspaceTypeScriptVersions": true,
+        "languages": [
+          "sts"
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "npm run compile",
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^12.11.7",
+    "@types/vscode": "^1.40.0",
+    "typescript": "^3.6.4",
+    "vscode-test": "^1.2.2"
+  },
+  "dependencies": {
+    "sts-language-service-plugin": "file:src/sts-language-service-plugin"
+  }
+}
