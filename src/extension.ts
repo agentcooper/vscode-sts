@@ -10,7 +10,7 @@ export async function activate(context: vscode.ExtensionContext) {
     return;
   }
 
-  await extension.activate();
+  const api = await (extension.activate as any)(context);
 }
 
 export function deactivate() {}

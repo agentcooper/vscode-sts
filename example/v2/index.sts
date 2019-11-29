@@ -1,8 +1,9 @@
-const data = {
+import { foo } from "./foo.sts";
+
+export const data = {
   a: customSTSFunction(),
   b: 2,
+  c: foo()
 };
-
-data.b;
 
 export const config = <Template name="John"></Template>;

@@ -14,6 +14,16 @@
   ],
   "main": "./src/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "SmallTypeScript",
+      "properties": {
+        "typescript-plugins.suggest.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable suggest for SmallTypeScript."
+        }
+      }
+    },
     "languages": [
       {
         "id": "sts",
@@ -33,6 +43,25 @@
         "languages": [
           "sts"
         ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sts",
+        "scopeName": "source.sts",
+        "path": "./syntax/sts.json",
+        "embeddedLanguages": {
+          "meta.tag.sts": "jsx-tags",
+          "meta.tag.without-attributes.sts": "jsx-tags",
+          "meta.tag.attributes.sts": "sts",
+          "meta.embedded.expression.sts": "sts"
+        },
+        "tokenTypes": {
+          "entity.name.type.instance.jsdoc": "other",
+          "entity.name.function.tagged-template": "other",
+          "meta.import string.quoted": "other",
+          "variable.other.jsdoc": "other"
+        }
       }
     ]
   },
