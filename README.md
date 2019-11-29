@@ -10,3 +10,12 @@ code .
 
 # In VSCode press 'F5', new VSCode instance will open, open ./example directory with it
 ```
+
+# Developing against local VSCode
+
+```bash
+# Follow https://github.com/microsoft/vscode/wiki/How-to-Contribute to build local VSCode
+# Use `yarn watch` to build VSCode
+
+./scripts/code.sh --extensionDevelopmentPath=$ABSOLUTE_PATH_TO_VSCODE_STS_DIRECTORY
+```
