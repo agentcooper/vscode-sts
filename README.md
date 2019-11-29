@@ -1,4 +1,4 @@
-Work in progress VSCode extension for a DSL based on TypeScript.
+Work in progress VSCode extension for a DSL based on TypeScript. See https://github.com/microsoft/vscode/issues/85788.
 
 # To run
 
