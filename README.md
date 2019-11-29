@@ -8,7 +8,7 @@ npm run build
 
 code .
 
-# In VSCode press 'F5', new VSCode instance will open, open ./example directory with it
+# In VSCode press 'F5' (Use fn on Mac), new VSCode instance will open, open ./example directory with it
 ```
 
 # Developing against local VSCode
@@ -17,5 +17,6 @@ code .
 # Follow https://github.com/microsoft/vscode/wiki/How-to-Contribute to build local VSCode
 # Use `yarn watch` to build VSCode
 
-./scripts/code.sh --extensionDevelopmentPath=$ABSOLUTE_PATH_TO_VSCODE_STS_DIRECTORY
+# inside VSCode directory
+./scripts/code.sh --extensionDevelopmentPath=$ABSOLUTE_PATH_TO_VSCODE_STS_DIRECTORY ~/vscode-sts/example
 ```
