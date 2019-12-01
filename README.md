@@ -20,3 +20,19 @@ code .
 # inside VSCode directory
 ./scripts/code.sh --extensionDevelopmentPath=$ABSOLUTE_PATH_TO_VSCODE_STS_DIRECTORY ~/vscode-sts/example
 ```
+
+# Useful resources
+
+## Language server plugins 
+
+- https://github.com/Quramy/typescript-eslint-language-service
+- https://github.com/justjavac/typescript-deno-plugin
+- https://github.com/mrmckeb/typescript-plugin-css-modules
+- https://github.com/runem/lit-analyzer/tree/master/packages/ts-lit-plugin
+- https://github.com/angular/vscode-ng-language-service
+- https://github.com/Microsoft/typescript-tslint-plugin
+
+## Docs
+
+- https://code.visualstudio.com/api/references/contribution-points#contributes.typescriptServerPlugins
+- https://github.com/microsoft/TypeScript/wiki/Getting-logs-from-TS-Server-in-VS-Code
