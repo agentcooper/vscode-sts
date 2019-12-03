@@ -36,3 +36,4 @@ code .
 
 - https://code.visualstudio.com/api/references/contribution-points#contributes.typescriptServerPlugins
 - https://github.com/microsoft/TypeScript/wiki/Getting-logs-from-TS-Server-in-VS-Code
+- https://github.com/Microsoft/TypeScript/wiki/Debugging-Language-Service-in-VS-Code
