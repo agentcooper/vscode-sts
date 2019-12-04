@@ -1,12 +1,18 @@
 import * as vscode from "vscode";
 
+const typescriptLanguageFeaturesExtension =
+  "vscode.typescript-language-features";
+
 export async function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "vscode-sts" is now active!');
+  console.log('Extension "vscode-sts" is now active!');
 
   const extension = vscode.extensions.getExtension(
-    "vscode.typescript-language-features",
+    typescriptLanguageFeaturesExtension,
   );
   if (!extension) {
+    console.log(
+      `Extension "${typescriptLanguageFeaturesExtension}" not found!`,
+    );
     return;
   }
 

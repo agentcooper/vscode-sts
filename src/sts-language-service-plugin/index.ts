@@ -1,105 +1,192 @@
 import { join } from "path";
-import { ScriptKind } from "typescript/lib/tsserverlibrary";
+import { ScriptKind, JsxEmit } from "typescript/lib/tsserverlibrary";
 import { resolve, dirname } from "path";
 
-function init(modules: {
-  typescript: typeof import("typescript/lib/tsserverlibrary");
-}) {
+const created = new Map();
+
+const globalCompilerOptions = {
+  strict: true,
+  noUnusedLocals: true,
+  jsx: JsxEmit.React,
+  jsxFactory: "createElement",
+  lib: [join(__dirname, "../../declarations/core.d.ts")],
+  typeRoots: [],
+  allowNonTsExtensions: true,
+};
+
+const virtualConfigShared = {
+  include: ["./"],
+};
+
+const files: Record<string, string> = {
+  "/Users/artemtyurin/vscode-sts/example/v1/tsconfig.json": JSON.stringify({
+    ...virtualConfigShared,
+    files: ["/Users/artemtyurin/vscode-sts/declarations/v1.d.ts"],
+  }),
+  "/Users/artemtyurin/vscode-sts/example/v2/tsconfig.json": JSON.stringify({
+    ...virtualConfigShared,
+    files: ["/Users/artemtyurin/vscode-sts/declarations/v2.d.ts"],
+  }),
+};
+
+const LOG_PREFIX = "[STS]";
+const STS_EXTENSION = ".sts";
+
+const ENABLE_VIRTUAL_FILES = true;
+
+let needsReload = true;
+
+type TS = typeof import("typescript/lib/tsserverlibrary");
+type Log = (message: string) => void;
+
+function patchSys(ts: TS, log: Log) {
+  const _readFile = ts.sys.readFile;
+  const _fileExists = ts.sys.fileExists;
+  const _watchFile = ts.sys.watchFile!;
+
+  ts.sys.readFile = (path: string, encoding?: string | undefined) => {
+    log(`ts.sys.readFile: path = ${path}`);
+
+    if (ENABLE_VIRTUAL_FILES && path in files) {
+      return files[path];
+    }
+
+    return _readFile.call(ts.sys, path, encoding);
+  };
+
+  ts.sys.fileExists = (path: string) => {
+    log(`ts.sys.fileExists: path = ${path}`);
+
+    if (ENABLE_VIRTUAL_FILES && path in files) {
+      return true;
+    }
+
+    return _fileExists.call(ts.sys, path);
+  };
+
+  ts.sys.watchFile = (
+    path: string,
+    callback: ts.FileWatcherCallback,
+    pollingInterval?: number | undefined,
+  ) => {
+    log(`ts.sys.watchFile: path = ${path}`);
+
+    if (ENABLE_VIRTUAL_FILES && path in files) {
+      setTimeout(() => {
+        if (!created.has(path)) {
+          created.set(path, true);
+          callback(path, ts.FileWatcherEventKind.Created);
+        }
+      }, 0);
+      return {
+        close() {
+          created.delete(path);
+        },
+      };
+    }
+
+    return _watchFile.call(ts.sys, path, callback, pollingInterval);
+  };
+}
+
+function patchLanguageServiceHost(
+  ts: TS,
+  host: ts.LanguageServiceHost,
+  log: Log,
+) {
+  const getScriptKind = host.getScriptKind;
+  const getCompilationSettings = host.getCompilationSettings;
+
+  host.getScriptKind = (filename: string) => {
+    if (getScriptKind) {
+      const scriptKind = getScriptKind.call(host, filename);
+
+      if (scriptKind !== ScriptKind.Unknown) {
+        return scriptKind;
+      }
+    }
+
+    return ScriptKind.TSX;
+  };
+
+  host.getCompilationSettings = () => {
+    const projectConfig = getCompilationSettings.call(host);
+    const compilationSettings = { ...projectConfig, ...globalCompilerOptions };
+    return compilationSettings;
+  };
+
+  host.resolveModuleNames = (
+    moduleNames: string[],
+    containingFile: string,
+    reusedNames: string[] | undefined,
+    redirectedReference: ts.ResolvedProjectReference | undefined,
+    options: ts.CompilerOptions,
+  ) => {
+    log(`In ${containingFile}, found moduleNames = ${moduleNames}`);
+
+    return moduleNames.map(moduleName => {
+      const { resolvedModule } = ts.resolveModuleName(
+        moduleName,
+        containingFile,
+        options,
+        ts.sys,
+        undefined,
+        undefined,
+      );
+
+      log(
+        `Resolved moduleName = ${moduleName} to resolvedModule = ${JSON.stringify(
+          resolvedModule,
+        )}`,
+      );
+
+      if (!resolvedModule) {
+        return {
+          resolvedFileName: resolve(dirname(containingFile), moduleName),
+          extension: ts.Extension.Tsx,
+        };
+      }
+
+      return resolvedModule;
+    });
+  };
+}
+
+function patchTS(ts: TS, projectService: ts.server.ProjectService) {
+  const _ts = ts as any;
+  const _getSupportedExtensions = _ts.getSupportedExtensions;
+
+  _ts.getSupportedExtensions = (...args: any[]) => {
+    const r = _getSupportedExtensions(...args);
+
+    setTimeout(() => {
+      if (needsReload) {
+        projectService.reloadProjects();
+        needsReload = false;
+      }
+    }, 0);
+
+    return [...r, STS_EXTENSION];
+  };
+}
+
+function init(modules: { typescript: TS }) {
   const ts = modules.typescript;
 
   function create(info: ts.server.PluginCreateInfo) {
-    function log(s: string) {
-      info.project.projectService.logger.info(`[STS] ${s}`);
+    const { projectService } = info.project;
+
+    function log(message: string) {
+      projectService.logger.info(`${LOG_PREFIX} ${message}`);
     }
 
-    info.project.enableLanguageService();
-
-    const openClientFile = info.project.projectService.openClientFile;
-
-    info.project.projectService.openClientFile = (...args) => {
-      log(`openClientFile ${args[0]}`);
-      return openClientFile(...args);
-    };
-
-    const projectRoot = info.project.getCurrentDirectory();
-    log(`Plugin is active, projectRoot = ${projectRoot}`);
-
-    const compilerOptions = {
-      strict: true,
-      noUnusedLocals: true,
-      jsx: ts.JsxEmit.React,
-      jsxFactory: "createElement",
-      lib: [join(__dirname, "../../declarations/core.d.ts")],
-      typeRoots: [],
-    };
-
-    info.languageServiceHost.getScriptKind = (filename: string) => {
-      log(`getScriptKind`);
-      return ScriptKind.TSX;
-    };
-
-    const readFile = info.languageServiceHost.readFile;
-    if (!readFile) {
-      log(`Fail`);
-      return info.languageService;
+    if (ENABLE_VIRTUAL_FILES) {
+      patchSys(ts, log);
     }
-    info.languageServiceHost.readFile = (
-      fileName: string,
-      encoding?: string,
-    ) => {
-      log(`readFile ${fileName}`);
-      return readFile(fileName, encoding);
-    };
 
-    info.languageServiceHost.getCompilationSettings;
+    patchLanguageServiceHost(ts, info.languageServiceHost, log);
 
-    const getCompilationSettings =
-      info.languageServiceHost.getCompilationSettings;
-    info.languageServiceHost.getCompilationSettings = () => {
-      const projectConfig = getCompilationSettings.call(
-        info.languageServiceHost,
-      );
-      const compilationSettings = { ...projectConfig, ...compilerOptions };
-      return compilationSettings;
-    };
-
-    info.languageServiceHost.resolveModuleNames = (
-      moduleNames: string[],
-      containingFile: string,
-      reusedNames: string[] | undefined,
-      redirectedReference: ts.ResolvedProjectReference | undefined,
-      options: ts.CompilerOptions,
-    ) => {
-      info.project.projectService.logger.info(
-        `[STS] In ${containingFile}, found moduleNames = ${moduleNames}`,
-      );
-
-      return moduleNames.map(moduleName => {
-        const { resolvedModule } = ts.resolveModuleName(
-          moduleName,
-          containingFile,
-          options,
-          ts.sys,
-          undefined,
-          undefined,
-        );
-
-        info.project.projectService.logger.info(
-          `[STS] Resolved moduleName = ${moduleName} to resolvedModule = ${JSON.stringify(
-            resolvedModule,
-          )}`,
-        );
-
-        if (!resolvedModule) {
-          return {
-            resolvedFileName: resolve(dirname(containingFile), moduleName),
-            extension: ts.Extension.Tsx,
-          };
-        }
-
-        return resolvedModule;
-      });
-    };
+    patchTS(ts, projectService);
 
     return info.languageService;
   }

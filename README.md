@@ -17,6 +17,9 @@ code .
 # Follow https://github.com/microsoft/vscode/wiki/How-to-Contribute to build local VSCode
 # Use `yarn watch` to build VSCode
 
+# enable TSS_LOG (see https://github.com/Microsoft/TypeScript/wiki/Standalone-Server-%28tsserver%29#logging)
+export TSS_LOG="-level verbose -file ~/vscode-sts/tss.log"
+
 # inside VSCode directory
 ./scripts/code.sh --extensionDevelopmentPath=$ABSOLUTE_PATH_TO_VSCODE_STS_DIRECTORY ~/vscode-sts/example
 ```

@@ -6,4 +6,7 @@ export const data = {
   c: foo()
 };
 
+v1();
+v2(); // should error
+
 export const config = <Template name="John"></Template>;
