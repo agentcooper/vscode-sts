@@ -1,9 +1,11 @@
 import { foo } from "./foo.sts";
+import { bar } from "./bar";
 
 export const data = {
   a: customSTSFunction(),
   b: 2,
-  c: foo()
+  c: foo(),
+  d: bar()
 };
 
 v1(); // should error
