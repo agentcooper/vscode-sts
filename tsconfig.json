@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["declarations/*", "example/*", "node_modules"]
+  "exclude": ["./declarations/*", "./example/*", "./node_modules"]
 }

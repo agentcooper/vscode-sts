@@ -1,5 +1,5 @@
-import { bar } from "./bar";
 import { foo } from "./foo.sts";
+import { bar } from "./utils/bar";
 
 export const data = {
   a: customSTSFunction(),
