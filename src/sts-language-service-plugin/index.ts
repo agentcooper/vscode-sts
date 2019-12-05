@@ -1,10 +1,12 @@
 import { join } from "path";
-import { ScriptKind, JsxEmit } from "typescript/lib/tsserverlibrary";
+import {
+  ScriptKind,
+  JsxEmit,
+  CompilerOptions,
+} from "typescript/lib/tsserverlibrary";
 import { resolve, dirname } from "path";
 
-const created = new Map();
-
-const globalCompilerOptions = {
+const globalCompilerOptions: CompilerOptions = {
   strict: true,
   noUnusedLocals: true,
   jsx: JsxEmit.React,
@@ -12,32 +14,40 @@ const globalCompilerOptions = {
   lib: [join(__dirname, "../../declarations/core.d.ts")],
   typeRoots: [],
   allowNonTsExtensions: true,
+  allowJs: false,
 };
 
 const virtualConfigShared = {
   include: ["./"],
 };
 
-const files: Record<string, string> = {
-  "/Users/artemtyurin/vscode-sts/example/v1/tsconfig.json": JSON.stringify({
-    ...virtualConfigShared,
-    files: ["/Users/artemtyurin/vscode-sts/declarations/v1.d.ts"],
-  }),
-  "/Users/artemtyurin/vscode-sts/example/v2/tsconfig.json": JSON.stringify({
-    ...virtualConfigShared,
-    files: ["/Users/artemtyurin/vscode-sts/declarations/v2.d.ts"],
-  }),
-};
-
 const LOG_PREFIX = "[STS]";
 const STS_EXTENSION = ".sts";
 
-const ENABLE_VIRTUAL_FILES = true;
+let needsRefresh = true;
 
-let needsReload = true;
+const tsconfigFilename = "/tsconfig.json";
+const customConfigFilename = "/stsconfig.json";
 
 type TS = typeof import("typescript/lib/tsserverlibrary");
 type Log = (message: string) => void;
+
+function isTSConfig(path: string) {
+  return path.endsWith(tsconfigFilename);
+}
+
+function getCustomConfigPath(path: string) {
+  return path.replace(tsconfigFilename, customConfigFilename);
+}
+
+function getVirtualTSConfigFromCustomConfig(customConfigContent: string) {
+  // TODO: think about cache
+  const json = JSON.parse(customConfigContent);
+  return JSON.stringify({
+    ...virtualConfigShared,
+    files: [`/Users/artemtyurin/vscode-sts/declarations/${json.version}.d.ts`],
+  });
+}
 
 function patchSys(ts: TS, log: Log) {
   const _readFile = ts.sys.readFile;
@@ -47,8 +57,19 @@ function patchSys(ts: TS, log: Log) {
   ts.sys.readFile = (path: string, encoding?: string | undefined) => {
     log(`ts.sys.readFile: path = ${path}`);
 
-    if (ENABLE_VIRTUAL_FILES && path in files) {
-      return files[path];
+    if (isTSConfig(path)) {
+      log(
+        `ts.sys.readFile: redirecting ${path} to ${getCustomConfigPath(path)}`,
+      );
+
+      const customConfigContent = _readFile.call(
+        ts.sys,
+        getCustomConfigPath(path),
+      );
+
+      if (customConfigContent) {
+        return getVirtualTSConfigFromCustomConfig(customConfigContent);
+      }
     }
 
     return _readFile.call(ts.sys, path, encoding);
@@ -57,8 +78,13 @@ function patchSys(ts: TS, log: Log) {
   ts.sys.fileExists = (path: string) => {
     log(`ts.sys.fileExists: path = ${path}`);
 
-    if (ENABLE_VIRTUAL_FILES && path in files) {
-      return true;
+    if (isTSConfig(path)) {
+      log(
+        `ts.sys.fileExists: redirecting ${path} to ${getCustomConfigPath(
+          path,
+        )}`,
+      );
+      return _fileExists.call(ts.sys, getCustomConfigPath(path));
     }
 
     return _fileExists.call(ts.sys, path);
@@ -71,18 +97,16 @@ function patchSys(ts: TS, log: Log) {
   ) => {
     log(`ts.sys.watchFile: path = ${path}`);
 
-    if (ENABLE_VIRTUAL_FILES && path in files) {
-      setTimeout(() => {
-        if (!created.has(path)) {
-          created.set(path, true);
-          callback(path, ts.FileWatcherEventKind.Created);
-        }
-      }, 0);
-      return {
-        close() {
-          created.delete(path);
-        },
-      };
+    if (isTSConfig(path)) {
+      log(
+        `ts.sys.watchFile: redirecting ${path} to ${getCustomConfigPath(path)}`,
+      );
+      return _watchFile.call(
+        ts.sys,
+        getCustomConfigPath(path),
+        callback,
+        pollingInterval,
+      );
     }
 
     return _watchFile.call(ts.sys, path, callback, pollingInterval);
@@ -152,22 +176,27 @@ function patchLanguageServiceHost(
   };
 }
 
-function patchTS(ts: TS, projectService: ts.server.ProjectService) {
+function patchTS(ts: TS) {
   const _ts = ts as any;
   const _getSupportedExtensions = _ts.getSupportedExtensions;
 
   _ts.getSupportedExtensions = (...args: any[]) => {
     const r = _getSupportedExtensions(...args);
-
-    setTimeout(() => {
-      if (needsReload) {
-        projectService.reloadProjects();
-        needsReload = false;
-      }
-    }, 0);
-
     return [...r, STS_EXTENSION];
   };
+}
+
+function refreshIfNeeded(projectService: ts.server.ProjectService) {
+  if (!needsRefresh) {
+    return;
+  }
+  setTimeout(() => {
+    // clear the cache
+    (projectService as any).configFileExistenceInfoCache.clear();
+
+    projectService.reloadProjects();
+    needsRefresh = false;
+  }, 0);
 }
 
 function init(modules: { typescript: TS }) {
@@ -180,13 +209,12 @@ function init(modules: { typescript: TS }) {
       projectService.logger.info(`${LOG_PREFIX} ${message}`);
     }
 
-    if (ENABLE_VIRTUAL_FILES) {
-      patchSys(ts, log);
-    }
+    patchSys(ts, log);
+    patchTS(ts);
 
     patchLanguageServiceHost(ts, info.languageServiceHost, log);
 
-    patchTS(ts, projectService);
+    refreshIfNeeded(projectService);
 
     return info.languageService;
   }

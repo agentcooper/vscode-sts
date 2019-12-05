@@ -66,6 +66,7 @@
     ]
   },
   "scripts": {
+    "clean": "rm -rf *.log",
     "build": "npm run compile",
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
