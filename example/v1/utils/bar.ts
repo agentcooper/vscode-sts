@@ -1,3 +1,3 @@
 export function bar() {
-  return ["bar", customSTSFunction()];
+  return ["bar", customSTSFunction(), v1()];
 }
