@@ -11,7 +11,7 @@ const globalCompilerOptions: CompilerOptions = {
   noUnusedLocals: true,
   jsx: JsxEmit.React,
   jsxFactory: "createElement",
-  lib: [join(__dirname, "../../declarations/core.d.ts")],
+  lib: [join(__dirname, "../../declarations/core.d.sts")],
   typeRoots: [],
   allowNonTsExtensions: true,
   allowJs: false,
@@ -45,7 +45,7 @@ function getVirtualTSConfigFromCustomConfig(customConfigContent: string) {
   const json = JSON.parse(customConfigContent);
   return JSON.stringify({
     ...virtualConfigShared,
-    files: [`/Users/artemtyurin/vscode-sts/declarations/${json.version}.d.ts`],
+    files: [`/Users/artemtyurin/vscode-sts/declarations/${json.version}.d.sts`],
   });
 }
 
