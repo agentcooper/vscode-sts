@@ -24,9 +24,18 @@ export TSS_LOG="-level verbose -file ~/vscode-sts/tss.log"
 ./scripts/code.sh --extensionDevelopmentPath=$ABSOLUTE_PATH_TO_VSCODE_STS_DIRECTORY ~/vscode-sts/example
 ```
 
+# Context
+
+VSCode uses built-in [typescript-language-features](https://github.com/microsoft/vscode/tree/master/extensions/typescript-language-features) extension that spawns [TS server](https://github.com/microsoft/TypeScript/tree/master/src/server) (TypeScript Language Service). TS server supports [plugin system](https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin). VSCode extension can [provide a plugin](https://code.visualstudio.com/api/references/contribution-points#contributes.typescriptServerPlugins) to a TS server.
+
+TypeScript is not using LSP, however 2 third-party solutions exists:
+
+- https://github.com/theia-ide/typescript-language-server (wraps TS server)
+- https://github.com/sourcegraph/javascript-typescript-langserver
+
 # Useful resources
 
-## Language server plugins 
+## Language server plugins
 
 - https://github.com/Quramy/typescript-eslint-language-service
 - https://github.com/justjavac/typescript-deno-plugin
