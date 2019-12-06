@@ -206,7 +206,13 @@ function init(modules: { typescript: TS }) {
     const { projectService } = info.project;
 
     function log(message: string) {
-      projectService.logger.info(`${LOG_PREFIX} ${message}`);
+      const PRINT_STACK = false;
+
+      let finalMessage = `${LOG_PREFIX} ${message}`;
+      if (PRINT_STACK) {
+        finalMessage += `| STACK: ${new Error().stack}`;
+      }
+      projectService.logger.info(finalMessage);
     }
 
     patchSys(ts, log);
