@@ -1,5 +1,21 @@
 Work in progress VSCode extension for a DSL based on TypeScript. See https://github.com/microsoft/vscode/issues/85788.
 
+# Goal
+
+Provide all IntelliSense features that VSCode provides for TypeScript, but for custom file extension (e.g. `*.sts`). This is needed to support "internal" DSLs: custom languages that use a subset of TypeScript.
+
+# How does this work
+
+This is a VSCode extension that configures a language (`*.sts` files) and activates a [TS server plugin](https://github.com/microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin) that enables TypeScript language service for the new file extension. `tsconfig.json` are virtual: they are generated on the fly based on `stsconfig.json` by redirecting filesystem calls.
+
+# Features
+
+- [x] Autocomplete and hover tips
+- [x] Providing custom declarations
+- [x] Go to defintion for `*.ts` and `*.sts`
+- [x] Auto-import
+- [x] Virtual `tsconfig.json`: custom settings are read from `stsconfig.json`
+
 # To run
 
 ```
