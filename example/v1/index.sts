@@ -8,8 +8,8 @@ export const data = {
   d: bar()
 };
 
-v1(); // should error
-v2();
+v1();
+v2(); // should error
 
 export const config = <Template name="John"></Template>;
 
