@@ -16,6 +16,10 @@ This is a VSCode extension that configures a language (`*.sts` files) and activa
 - [x] Auto-import
 - [x] Virtual `tsconfig.json`: custom settings are read from `stsconfig.json`
 
+# Open problems
+
+- https://github.com/agentcooper/vscode-sts/issues/1
+
 # To run
 
 ```
